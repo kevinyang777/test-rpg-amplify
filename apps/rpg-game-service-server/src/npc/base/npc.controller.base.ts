@@ -16,17 +16,38 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { NpcService } from "../npc.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { NpcCreateInput } from "./NpcCreateInput";
 import { Npc } from "./Npc";
 import { NpcFindManyArgs } from "./NpcFindManyArgs";
 import { NpcWhereUniqueInput } from "./NpcWhereUniqueInput";
 import { NpcUpdateInput } from "./NpcUpdateInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class NpcControllerBase {
-  constructor(protected readonly service: NpcService) {}
+  constructor(
+    protected readonly service: NpcService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: Npc })
+  @nestAccessControl.UseRoles({
+    resource: "Npc",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: NpcCreateInput,
+  })
   async createNpc(@common.Body() data: NpcCreateInput): Promise<Npc> {
     return await this.service.createNpc({
       data: data,
@@ -39,9 +60,18 @@ export class NpcControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get()
   @swagger.ApiOkResponse({ type: [Npc] })
   @ApiNestedQuery(NpcFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "Npc",
+    action: "read",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async npcs(@common.Req() request: Request): Promise<Npc[]> {
     const args = plainToClass(NpcFindManyArgs, request.query);
     return this.service.npcs({
@@ -55,9 +85,18 @@ export class NpcControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: Npc })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Npc",
+    action: "read",
+    possession: "own",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async npc(@common.Param() params: NpcWhereUniqueInput): Promise<Npc | null> {
     const result = await this.service.npc({
       where: params,
@@ -76,9 +115,21 @@ export class NpcControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: Npc })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Npc",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: NpcUpdateInput,
+  })
   async updateNpc(
     @common.Param() params: NpcWhereUniqueInput,
     @common.Body() data: NpcUpdateInput
@@ -107,6 +158,14 @@ export class NpcControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: Npc })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Npc",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteNpc(
     @common.Param() params: NpcWhereUniqueInput
   ): Promise<Npc | null> {

@@ -16,7 +16,11 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { MonsterService } from "../monster.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { MonsterCreateInput } from "./MonsterCreateInput";
 import { Monster } from "./Monster";
 import { MonsterFindManyArgs } from "./MonsterFindManyArgs";
@@ -24,10 +28,27 @@ import { MonsterWhereUniqueInput } from "./MonsterWhereUniqueInput";
 import { MonsterUpdateInput } from "./MonsterUpdateInput";
 import { MonsterDto } from "../MonsterDto";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class MonsterControllerBase {
-  constructor(protected readonly service: MonsterService) {}
+  constructor(
+    protected readonly service: MonsterService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: Monster })
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: MonsterCreateInput,
+  })
   async createMonster(
     @common.Body() data: MonsterCreateInput
   ): Promise<Monster> {
@@ -60,9 +81,18 @@ export class MonsterControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get()
   @swagger.ApiOkResponse({ type: [Monster] })
   @ApiNestedQuery(MonsterFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "read",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async monsters(@common.Req() request: Request): Promise<Monster[]> {
     const args = plainToClass(MonsterFindManyArgs, request.query);
     return this.service.monsters({
@@ -86,9 +116,18 @@ export class MonsterControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: Monster })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "read",
+    possession: "own",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async monster(
     @common.Param() params: MonsterWhereUniqueInput
   ): Promise<Monster | null> {
@@ -119,9 +158,21 @@ export class MonsterControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: Monster })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: MonsterUpdateInput,
+  })
   async updateMonster(
     @common.Param() params: MonsterWhereUniqueInput,
     @common.Body() data: MonsterUpdateInput
@@ -168,6 +219,14 @@ export class MonsterControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: Monster })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteMonster(
     @common.Param() params: MonsterWhereUniqueInput
   ): Promise<Monster | null> {

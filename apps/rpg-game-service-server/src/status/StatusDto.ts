@@ -1,7 +1,11 @@
+import { ArgsType, ObjectType, Field } from "@nestjs/graphql";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 
+@ArgsType()
+@ObjectType("StatusDtoObject")
 class StatusDto {
+    @Field(() => Number)
     @ApiProperty({
         required: true,
         type: () => Number
@@ -9,6 +13,7 @@ class StatusDto {
     @Type(() => Number)
     strength!: number;
 
+    @Field(() => Number)
     @ApiProperty({
         required: true,
         type: () => Number
@@ -16,6 +21,7 @@ class StatusDto {
     @Type(() => Number)
     agility!: number;
 
+    @Field(() => Number)
     @ApiProperty({
         required: true,
         type: () => Number

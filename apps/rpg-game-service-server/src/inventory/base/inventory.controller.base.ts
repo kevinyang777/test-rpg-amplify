@@ -16,17 +16,38 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { InventoryService } from "../inventory.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { InventoryCreateInput } from "./InventoryCreateInput";
 import { Inventory } from "./Inventory";
 import { InventoryFindManyArgs } from "./InventoryFindManyArgs";
 import { InventoryWhereUniqueInput } from "./InventoryWhereUniqueInput";
 import { InventoryUpdateInput } from "./InventoryUpdateInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class InventoryControllerBase {
-  constructor(protected readonly service: InventoryService) {}
+  constructor(
+    protected readonly service: InventoryService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: Inventory })
+  @nestAccessControl.UseRoles({
+    resource: "Inventory",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: InventoryCreateInput,
+  })
   async createInventory(
     @common.Body() data: InventoryCreateInput
   ): Promise<Inventory> {
@@ -67,9 +88,18 @@ export class InventoryControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get()
   @swagger.ApiOkResponse({ type: [Inventory] })
   @ApiNestedQuery(InventoryFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "Inventory",
+    action: "read",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async inventories(@common.Req() request: Request): Promise<Inventory[]> {
     const args = plainToClass(InventoryFindManyArgs, request.query);
     return this.service.inventories({
@@ -95,9 +125,18 @@ export class InventoryControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: Inventory })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Inventory",
+    action: "read",
+    possession: "own",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async inventory(
     @common.Param() params: InventoryWhereUniqueInput
   ): Promise<Inventory | null> {
@@ -130,9 +169,21 @@ export class InventoryControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: Inventory })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Inventory",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: InventoryUpdateInput,
+  })
   async updateInventory(
     @common.Param() params: InventoryWhereUniqueInput,
     @common.Body() data: InventoryUpdateInput
@@ -187,6 +238,14 @@ export class InventoryControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: Inventory })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Inventory",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteInventory(
     @common.Param() params: InventoryWhereUniqueInput
   ): Promise<Inventory | null> {

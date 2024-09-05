@@ -16,7 +16,11 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { FieldModelService } from "../fieldModel.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { FieldModelCreateInput } from "./FieldModelCreateInput";
 import { FieldModel } from "./FieldModel";
 import { FieldModelFindManyArgs } from "./FieldModelFindManyArgs";
@@ -29,10 +33,27 @@ import { MonsterFindManyArgs } from "../../monster/base/MonsterFindManyArgs";
 import { Monster } from "../../monster/base/Monster";
 import { MonsterWhereUniqueInput } from "../../monster/base/MonsterWhereUniqueInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class FieldModelControllerBase {
-  constructor(protected readonly service: FieldModelService) {}
+  constructor(
+    protected readonly service: FieldModelService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: FieldModel })
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: FieldModelCreateInput,
+  })
   async createFieldModel(
     @common.Body() data: FieldModelCreateInput
   ): Promise<FieldModel> {
@@ -48,9 +69,18 @@ export class FieldModelControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get()
   @swagger.ApiOkResponse({ type: [FieldModel] })
   @ApiNestedQuery(FieldModelFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "read",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async fieldModels(@common.Req() request: Request): Promise<FieldModel[]> {
     const args = plainToClass(FieldModelFindManyArgs, request.query);
     return this.service.fieldModels({
@@ -65,9 +95,18 @@ export class FieldModelControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: FieldModel })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "read",
+    possession: "own",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async fieldModel(
     @common.Param() params: FieldModelWhereUniqueInput
   ): Promise<FieldModel | null> {
@@ -89,9 +128,21 @@ export class FieldModelControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: FieldModel })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  @swagger.ApiBody({
+    type: FieldModelUpdateInput,
+  })
   async updateFieldModel(
     @common.Param() params: FieldModelWhereUniqueInput,
     @common.Body() data: FieldModelUpdateInput
@@ -121,6 +172,14 @@ export class FieldModelControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: FieldModel })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteFieldModel(
     @common.Param() params: FieldModelWhereUniqueInput
   ): Promise<FieldModel | null> {
@@ -145,8 +204,14 @@ export class FieldModelControllerBase {
     }
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id/characters")
   @ApiNestedQuery(CharacterFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "Character",
+    action: "read",
+    possession: "any",
+  })
   async findCharacters(
     @common.Req() request: Request,
     @common.Param() params: FieldModelWhereUniqueInput
@@ -186,6 +251,11 @@ export class FieldModelControllerBase {
   }
 
   @common.Post("/:id/characters")
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "update",
+    possession: "any",
+  })
   async connectCharacters(
     @common.Param() params: FieldModelWhereUniqueInput,
     @common.Body() body: CharacterWhereUniqueInput[]
@@ -203,6 +273,11 @@ export class FieldModelControllerBase {
   }
 
   @common.Patch("/:id/characters")
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "update",
+    possession: "any",
+  })
   async updateCharacters(
     @common.Param() params: FieldModelWhereUniqueInput,
     @common.Body() body: CharacterWhereUniqueInput[]
@@ -220,6 +295,11 @@ export class FieldModelControllerBase {
   }
 
   @common.Delete("/:id/characters")
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "update",
+    possession: "any",
+  })
   async disconnectCharacters(
     @common.Param() params: FieldModelWhereUniqueInput,
     @common.Body() body: CharacterWhereUniqueInput[]
@@ -236,8 +316,14 @@ export class FieldModelControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id/monsters")
   @ApiNestedQuery(MonsterFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "read",
+    possession: "any",
+  })
   async findMonsters(
     @common.Req() request: Request,
     @common.Param() params: FieldModelWhereUniqueInput
@@ -271,6 +357,11 @@ export class FieldModelControllerBase {
   }
 
   @common.Post("/:id/monsters")
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "update",
+    possession: "any",
+  })
   async connectMonsters(
     @common.Param() params: FieldModelWhereUniqueInput,
     @common.Body() body: MonsterWhereUniqueInput[]
@@ -288,6 +379,11 @@ export class FieldModelControllerBase {
   }
 
   @common.Patch("/:id/monsters")
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "update",
+    possession: "any",
+  })
   async updateMonsters(
     @common.Param() params: FieldModelWhereUniqueInput,
     @common.Body() body: MonsterWhereUniqueInput[]
@@ -305,6 +401,11 @@ export class FieldModelControllerBase {
   }
 
   @common.Delete("/:id/monsters")
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "update",
+    possession: "any",
+  })
   async disconnectMonsters(
     @common.Param() params: FieldModelWhereUniqueInput,
     @common.Body() body: MonsterWhereUniqueInput[]
