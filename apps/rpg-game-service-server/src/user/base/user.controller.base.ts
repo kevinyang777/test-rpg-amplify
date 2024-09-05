@@ -168,6 +168,14 @@ export class UserControllerBase {
       select: {
         createdAt: true,
         experience: true,
+
+        fieldField: {
+          select: {
+            id: true,
+          },
+        },
+
+        hp: true,
         id: true,
         level: true,
         name: true,

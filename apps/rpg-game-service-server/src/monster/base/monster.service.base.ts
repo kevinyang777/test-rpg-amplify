@@ -10,7 +10,11 @@ https://docs.amplication.com/how-to/custom-code
 ------------------------------------------------------------------------------
   */
 import { PrismaService } from "../../prisma/prisma.service";
-import { Prisma, Monster as PrismaMonster } from "@prisma/client";
+import {
+  Prisma,
+  Monster as PrismaMonster,
+  FieldModel as PrismaFieldModel,
+} from "@prisma/client";
 import { MonsterDto } from "../MonsterDto";
 
 export class MonsterServiceBase {
@@ -36,6 +40,14 @@ export class MonsterServiceBase {
   }
   async deleteMonster(args: Prisma.MonsterDeleteArgs): Promise<PrismaMonster> {
     return this.prisma.monster.delete(args);
+  }
+
+  async getFieldField(parentId: string): Promise<PrismaFieldModel | null> {
+    return this.prisma.monster
+      .findUnique({
+        where: { id: parentId },
+      })
+      .fieldField();
   }
   async FightMonster(args: MonsterDto): Promise<MonsterDto> {
     throw new Error("Not implemented");

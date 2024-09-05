@@ -16,9 +16,12 @@ import {
   Min,
   Max,
   IsOptional,
+  ValidateNested,
   IsString,
   MaxLength,
 } from "class-validator";
+import { FieldModelWhereUniqueInput } from "../../fieldModel/base/FieldModelWhereUniqueInput";
+import { Type } from "class-transformer";
 
 @InputType()
 class MonsterCreateInput {
@@ -34,6 +37,31 @@ class MonsterCreateInput {
     nullable: true,
   })
   experienceReward?: number | null;
+
+  @ApiProperty({
+    required: false,
+    type: () => FieldModelWhereUniqueInput,
+  })
+  @ValidateNested()
+  @Type(() => FieldModelWhereUniqueInput)
+  @IsOptional()
+  @Field(() => FieldModelWhereUniqueInput, {
+    nullable: true,
+  })
+  fieldField?: FieldModelWhereUniqueInput | null;
+
+  @ApiProperty({
+    required: false,
+    type: Number,
+  })
+  @IsInt()
+  @Min(-999999999)
+  @Max(999999999)
+  @IsOptional()
+  @Field(() => Number, {
+    nullable: true,
+  })
+  hp?: number | null;
 
   @ApiProperty({
     required: false,

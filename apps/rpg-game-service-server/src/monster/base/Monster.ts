@@ -17,10 +17,12 @@ import {
   Min,
   Max,
   IsOptional,
+  ValidateNested,
   IsString,
   MaxLength,
 } from "class-validator";
 import { Type } from "class-transformer";
+import { FieldModel } from "../../fieldModel/base/FieldModel";
 
 @ObjectType()
 class Monster {
@@ -44,6 +46,28 @@ class Monster {
     nullable: true,
   })
   experienceReward!: number | null;
+
+  @ApiProperty({
+    required: false,
+    type: () => FieldModel,
+  })
+  @ValidateNested()
+  @Type(() => FieldModel)
+  @IsOptional()
+  fieldField?: FieldModel | null;
+
+  @ApiProperty({
+    required: false,
+    type: Number,
+  })
+  @IsInt()
+  @Min(-999999999)
+  @Max(999999999)
+  @IsOptional()
+  @Field(() => Number, {
+    nullable: true,
+  })
+  hp!: number | null;
 
   @ApiProperty({
     required: true,
