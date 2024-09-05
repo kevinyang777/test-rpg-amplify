@@ -32,10 +32,26 @@ export class MonsterControllerBase {
     @common.Body() data: MonsterCreateInput
   ): Promise<Monster> {
     return await this.service.createMonster({
-      data: data,
+      data: {
+        ...data,
+
+        fieldField: data.fieldField
+          ? {
+              connect: data.fieldField,
+            }
+          : undefined,
+      },
       select: {
         createdAt: true,
         experienceReward: true,
+
+        fieldField: {
+          select: {
+            id: true,
+          },
+        },
+
+        hp: true,
         id: true,
         level: true,
         name: true,
@@ -54,6 +70,14 @@ export class MonsterControllerBase {
       select: {
         createdAt: true,
         experienceReward: true,
+
+        fieldField: {
+          select: {
+            id: true,
+          },
+        },
+
+        hp: true,
         id: true,
         level: true,
         name: true,
@@ -73,6 +97,14 @@ export class MonsterControllerBase {
       select: {
         createdAt: true,
         experienceReward: true,
+
+        fieldField: {
+          select: {
+            id: true,
+          },
+        },
+
+        hp: true,
         id: true,
         level: true,
         name: true,
@@ -97,10 +129,26 @@ export class MonsterControllerBase {
     try {
       return await this.service.updateMonster({
         where: params,
-        data: data,
+        data: {
+          ...data,
+
+          fieldField: data.fieldField
+            ? {
+                connect: data.fieldField,
+              }
+            : undefined,
+        },
         select: {
           createdAt: true,
           experienceReward: true,
+
+          fieldField: {
+            select: {
+              id: true,
+            },
+          },
+
+          hp: true,
           id: true,
           level: true,
           name: true,
@@ -129,6 +177,14 @@ export class MonsterControllerBase {
         select: {
           createdAt: true,
           experienceReward: true,
+
+          fieldField: {
+            select: {
+              id: true,
+            },
+          },
+
+          hp: true,
           id: true,
           level: true,
           name: true,

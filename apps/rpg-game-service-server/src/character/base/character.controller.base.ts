@@ -22,6 +22,9 @@ import { Character } from "./Character";
 import { CharacterFindManyArgs } from "./CharacterFindManyArgs";
 import { CharacterWhereUniqueInput } from "./CharacterWhereUniqueInput";
 import { CharacterUpdateInput } from "./CharacterUpdateInput";
+import { InventoryFindManyArgs } from "../../inventory/base/InventoryFindManyArgs";
+import { Inventory } from "../../inventory/base/Inventory";
+import { InventoryWhereUniqueInput } from "../../inventory/base/InventoryWhereUniqueInput";
 import { StatusFindManyArgs } from "../../status/base/StatusFindManyArgs";
 import { Status } from "../../status/base/Status";
 import { StatusWhereUniqueInput } from "../../status/base/StatusWhereUniqueInput";
@@ -38,6 +41,12 @@ export class CharacterControllerBase {
       data: {
         ...data,
 
+        fieldField: data.fieldField
+          ? {
+              connect: data.fieldField,
+            }
+          : undefined,
+
         user: data.user
           ? {
               connect: data.user,
@@ -47,6 +56,14 @@ export class CharacterControllerBase {
       select: {
         createdAt: true,
         experience: true,
+
+        fieldField: {
+          select: {
+            id: true,
+          },
+        },
+
+        hp: true,
         id: true,
         level: true,
         name: true,
@@ -71,6 +88,14 @@ export class CharacterControllerBase {
       select: {
         createdAt: true,
         experience: true,
+
+        fieldField: {
+          select: {
+            id: true,
+          },
+        },
+
+        hp: true,
         id: true,
         level: true,
         name: true,
@@ -96,6 +121,14 @@ export class CharacterControllerBase {
       select: {
         createdAt: true,
         experience: true,
+
+        fieldField: {
+          select: {
+            id: true,
+          },
+        },
+
+        hp: true,
         id: true,
         level: true,
         name: true,
@@ -129,6 +162,12 @@ export class CharacterControllerBase {
         data: {
           ...data,
 
+          fieldField: data.fieldField
+            ? {
+                connect: data.fieldField,
+              }
+            : undefined,
+
           user: data.user
             ? {
                 connect: data.user,
@@ -138,6 +177,14 @@ export class CharacterControllerBase {
         select: {
           createdAt: true,
           experience: true,
+
+          fieldField: {
+            select: {
+              id: true,
+            },
+          },
+
+          hp: true,
           id: true,
           level: true,
           name: true,
@@ -172,6 +219,14 @@ export class CharacterControllerBase {
         select: {
           createdAt: true,
           experience: true,
+
+          fieldField: {
+            select: {
+              id: true,
+            },
+          },
+
+          hp: true,
           id: true,
           level: true,
           name: true,
@@ -192,6 +247,93 @@ export class CharacterControllerBase {
       }
       throw error;
     }
+  }
+
+  @common.Get("/:id/inventories")
+  @ApiNestedQuery(InventoryFindManyArgs)
+  async findInventories(
+    @common.Req() request: Request,
+    @common.Param() params: CharacterWhereUniqueInput
+  ): Promise<Inventory[]> {
+    const query = plainToClass(InventoryFindManyArgs, request.query);
+    const results = await this.service.findInventories(params.id, {
+      ...query,
+      select: {
+        character: {
+          select: {
+            id: true,
+          },
+        },
+
+        createdAt: true,
+        id: true,
+
+        item: {
+          select: {
+            id: true,
+          },
+        },
+
+        updatedAt: true,
+      },
+    });
+    if (results === null) {
+      throw new errors.NotFoundException(
+        `No resource was found for ${JSON.stringify(params)}`
+      );
+    }
+    return results;
+  }
+
+  @common.Post("/:id/inventories")
+  async connectInventories(
+    @common.Param() params: CharacterWhereUniqueInput,
+    @common.Body() body: InventoryWhereUniqueInput[]
+  ): Promise<void> {
+    const data = {
+      inventories: {
+        connect: body,
+      },
+    };
+    await this.service.updateCharacter({
+      where: params,
+      data,
+      select: { id: true },
+    });
+  }
+
+  @common.Patch("/:id/inventories")
+  async updateInventories(
+    @common.Param() params: CharacterWhereUniqueInput,
+    @common.Body() body: InventoryWhereUniqueInput[]
+  ): Promise<void> {
+    const data = {
+      inventories: {
+        set: body,
+      },
+    };
+    await this.service.updateCharacter({
+      where: params,
+      data,
+      select: { id: true },
+    });
+  }
+
+  @common.Delete("/:id/inventories")
+  async disconnectInventories(
+    @common.Param() params: CharacterWhereUniqueInput,
+    @common.Body() body: InventoryWhereUniqueInput[]
+  ): Promise<void> {
+    const data = {
+      inventories: {
+        disconnect: body,
+      },
+    };
+    await this.service.updateCharacter({
+      where: params,
+      data,
+      select: { id: true },
+    });
   }
 
   @common.Get("/:id/statuses")
