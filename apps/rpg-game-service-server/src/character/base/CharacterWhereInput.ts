@@ -14,7 +14,9 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IntNullableFilter } from "../../util/IntNullableFilter";
 import { Type } from "class-transformer";
 import { IsOptional, ValidateNested } from "class-validator";
+import { FieldModelWhereUniqueInput } from "../../fieldModel/base/FieldModelWhereUniqueInput";
 import { StringFilter } from "../../util/StringFilter";
+import { InventoryListRelationFilter } from "../../inventory/base/InventoryListRelationFilter";
 import { StringNullableFilter } from "../../util/StringNullableFilter";
 import { StatusListRelationFilter } from "../../status/base/StatusListRelationFilter";
 import { UserWhereUniqueInput } from "../../user/base/UserWhereUniqueInput";
@@ -34,6 +36,29 @@ class CharacterWhereInput {
 
   @ApiProperty({
     required: false,
+    type: () => FieldModelWhereUniqueInput,
+  })
+  @ValidateNested()
+  @Type(() => FieldModelWhereUniqueInput)
+  @IsOptional()
+  @Field(() => FieldModelWhereUniqueInput, {
+    nullable: true,
+  })
+  fieldField?: FieldModelWhereUniqueInput;
+
+  @ApiProperty({
+    required: false,
+    type: IntNullableFilter,
+  })
+  @Type(() => IntNullableFilter)
+  @IsOptional()
+  @Field(() => IntNullableFilter, {
+    nullable: true,
+  })
+  hp?: IntNullableFilter;
+
+  @ApiProperty({
+    required: false,
     type: StringFilter,
   })
   @Type(() => StringFilter)
@@ -42,6 +67,18 @@ class CharacterWhereInput {
     nullable: true,
   })
   id?: StringFilter;
+
+  @ApiProperty({
+    required: false,
+    type: () => InventoryListRelationFilter,
+  })
+  @ValidateNested()
+  @Type(() => InventoryListRelationFilter)
+  @IsOptional()
+  @Field(() => InventoryListRelationFilter, {
+    nullable: true,
+  })
+  inventories?: InventoryListRelationFilter;
 
   @ApiProperty({
     required: false,

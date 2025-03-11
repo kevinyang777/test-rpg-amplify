@@ -16,12 +16,14 @@ import {
   Min,
   Max,
   IsOptional,
+  ValidateNested,
   IsString,
   MaxLength,
-  ValidateNested,
 } from "class-validator";
-import { StatusUpdateManyWithoutCharactersInput } from "./StatusUpdateManyWithoutCharactersInput";
+import { FieldModelWhereUniqueInput } from "../../fieldModel/base/FieldModelWhereUniqueInput";
 import { Type } from "class-transformer";
+import { InventoryUpdateManyWithoutCharactersInput } from "./InventoryUpdateManyWithoutCharactersInput";
+import { StatusUpdateManyWithoutCharactersInput } from "./StatusUpdateManyWithoutCharactersInput";
 import { UserWhereUniqueInput } from "../../user/base/UserWhereUniqueInput";
 
 @InputType()
@@ -38,6 +40,43 @@ class CharacterUpdateInput {
     nullable: true,
   })
   experience?: number | null;
+
+  @ApiProperty({
+    required: false,
+    type: () => FieldModelWhereUniqueInput,
+  })
+  @ValidateNested()
+  @Type(() => FieldModelWhereUniqueInput)
+  @IsOptional()
+  @Field(() => FieldModelWhereUniqueInput, {
+    nullable: true,
+  })
+  fieldField?: FieldModelWhereUniqueInput | null;
+
+  @ApiProperty({
+    required: false,
+    type: Number,
+  })
+  @IsInt()
+  @Min(-999999999)
+  @Max(999999999)
+  @IsOptional()
+  @Field(() => Number, {
+    nullable: true,
+  })
+  hp?: number | null;
+
+  @ApiProperty({
+    required: false,
+    type: () => InventoryUpdateManyWithoutCharactersInput,
+  })
+  @ValidateNested()
+  @Type(() => InventoryUpdateManyWithoutCharactersInput)
+  @IsOptional()
+  @Field(() => InventoryUpdateManyWithoutCharactersInput, {
+    nullable: true,
+  })
+  inventories?: InventoryUpdateManyWithoutCharactersInput;
 
   @ApiProperty({
     required: false,

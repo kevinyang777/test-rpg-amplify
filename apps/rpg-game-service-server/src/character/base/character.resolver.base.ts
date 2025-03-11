@@ -13,6 +13,12 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { Character } from "./Character";
 import { CharacterCountArgs } from "./CharacterCountArgs";
 import { CharacterFindManyArgs } from "./CharacterFindManyArgs";
@@ -20,15 +26,28 @@ import { CharacterFindUniqueArgs } from "./CharacterFindUniqueArgs";
 import { CreateCharacterArgs } from "./CreateCharacterArgs";
 import { UpdateCharacterArgs } from "./UpdateCharacterArgs";
 import { DeleteCharacterArgs } from "./DeleteCharacterArgs";
+import { InventoryFindManyArgs } from "../../inventory/base/InventoryFindManyArgs";
+import { Inventory } from "../../inventory/base/Inventory";
 import { StatusFindManyArgs } from "../../status/base/StatusFindManyArgs";
 import { Status } from "../../status/base/Status";
+import { FieldModel } from "../../fieldModel/base/FieldModel";
 import { User } from "../../user/base/User";
 import { CharacterDto } from "../CharacterDto";
 import { CharacterService } from "../character.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => Character)
 export class CharacterResolverBase {
-  constructor(protected readonly service: CharacterService) {}
+  constructor(
+    protected readonly service: CharacterService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @graphql.Query(() => MetaQueryPayload)
+  @nestAccessControl.UseRoles({
+    resource: "Character",
+    action: "read",
+    possession: "any",
+  })
   async _charactersMeta(
     @graphql.Args() args: CharacterCountArgs
   ): Promise<MetaQueryPayload> {
@@ -38,14 +57,26 @@ export class CharacterResolverBase {
     };
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => [Character])
+  @nestAccessControl.UseRoles({
+    resource: "Character",
+    action: "read",
+    possession: "any",
+  })
   async characters(
     @graphql.Args() args: CharacterFindManyArgs
   ): Promise<Character[]> {
     return this.service.characters(args);
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => Character, { nullable: true })
+  @nestAccessControl.UseRoles({
+    resource: "Character",
+    action: "read",
+    possession: "own",
+  })
   async character(
     @graphql.Args() args: CharacterFindUniqueArgs
   ): Promise<Character | null> {
@@ -56,7 +87,13 @@ export class CharacterResolverBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Character)
+  @nestAccessControl.UseRoles({
+    resource: "Character",
+    action: "create",
+    possession: "any",
+  })
   async createCharacter(
     @graphql.Args() args: CreateCharacterArgs
   ): Promise<Character> {
@@ -64,6 +101,12 @@ export class CharacterResolverBase {
       ...args,
       data: {
         ...args.data,
+
+        fieldField: args.data.fieldField
+          ? {
+              connect: args.data.fieldField,
+            }
+          : undefined,
 
         user: args.data.user
           ? {
@@ -74,7 +117,13 @@ export class CharacterResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Character)
+  @nestAccessControl.UseRoles({
+    resource: "Character",
+    action: "update",
+    possession: "any",
+  })
   async updateCharacter(
     @graphql.Args() args: UpdateCharacterArgs
   ): Promise<Character | null> {
@@ -83,6 +132,12 @@ export class CharacterResolverBase {
         ...args,
         data: {
           ...args.data,
+
+          fieldField: args.data.fieldField
+            ? {
+                connect: args.data.fieldField,
+              }
+            : undefined,
 
           user: args.data.user
             ? {
@@ -102,6 +157,11 @@ export class CharacterResolverBase {
   }
 
   @graphql.Mutation(() => Character)
+  @nestAccessControl.UseRoles({
+    resource: "Character",
+    action: "delete",
+    possession: "any",
+  })
   async deleteCharacter(
     @graphql.Args() args: DeleteCharacterArgs
   ): Promise<Character | null> {
@@ -117,7 +177,33 @@ export class CharacterResolverBase {
     }
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
+  @graphql.ResolveField(() => [Inventory], { name: "inventories" })
+  @nestAccessControl.UseRoles({
+    resource: "Inventory",
+    action: "read",
+    possession: "any",
+  })
+  async findInventories(
+    @graphql.Parent() parent: Character,
+    @graphql.Args() args: InventoryFindManyArgs
+  ): Promise<Inventory[]> {
+    const results = await this.service.findInventories(parent.id, args);
+
+    if (!results) {
+      return [];
+    }
+
+    return results;
+  }
+
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.ResolveField(() => [Status], { name: "statuses" })
+  @nestAccessControl.UseRoles({
+    resource: "Status",
+    action: "read",
+    possession: "any",
+  })
   async findStatuses(
     @graphql.Parent() parent: Character,
     @graphql.Args() args: StatusFindManyArgs
@@ -131,9 +217,36 @@ export class CharacterResolverBase {
     return results;
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
+  @graphql.ResolveField(() => FieldModel, {
+    nullable: true,
+    name: "fieldField",
+  })
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "read",
+    possession: "any",
+  })
+  async getFieldField(
+    @graphql.Parent() parent: Character
+  ): Promise<FieldModel | null> {
+    const result = await this.service.getFieldField(parent.id);
+
+    if (!result) {
+      return null;
+    }
+    return result;
+  }
+
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.ResolveField(() => User, {
     nullable: true,
     name: "user",
+  })
+  @nestAccessControl.UseRoles({
+    resource: "User",
+    action: "read",
+    possession: "any",
   })
   async getUser(@graphql.Parent() parent: Character): Promise<User | null> {
     const result = await this.service.getUser(parent.id);

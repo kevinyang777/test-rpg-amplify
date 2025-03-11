@@ -14,7 +14,9 @@ import { PrismaService } from "../../prisma/prisma.service";
 import {
   Prisma,
   Character as PrismaCharacter,
+  Inventory as PrismaInventory,
   Status as PrismaStatus,
+  FieldModel as PrismaFieldModel,
   User as PrismaUser,
 } from "@prisma/client";
 
@@ -55,6 +57,17 @@ export class CharacterServiceBase {
     return this.prisma.character.delete(args);
   }
 
+  async findInventories(
+    parentId: string,
+    args: Prisma.InventoryFindManyArgs
+  ): Promise<PrismaInventory[]> {
+    return this.prisma.character
+      .findUniqueOrThrow({
+        where: { id: parentId },
+      })
+      .inventories(args);
+  }
+
   async findStatuses(
     parentId: string,
     args: Prisma.StatusFindManyArgs
@@ -64,6 +77,14 @@ export class CharacterServiceBase {
         where: { id: parentId },
       })
       .statuses(args);
+  }
+
+  async getFieldField(parentId: string): Promise<PrismaFieldModel | null> {
+    return this.prisma.character
+      .findUnique({
+        where: { id: parentId },
+      })
+      .fieldField();
   }
 
   async getUser(parentId: string): Promise<PrismaUser | null> {

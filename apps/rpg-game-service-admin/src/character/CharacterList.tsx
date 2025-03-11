@@ -8,6 +8,7 @@ import {
   ReferenceField,
 } from "react-admin";
 import Pagination from "../Components/Pagination";
+import { FIELDMODEL_TITLE_FIELD } from "../fieldModel/FieldModelTitle";
 import { USER_TITLE_FIELD } from "../user/UserTitle";
 
 export const CharacterList = (props: ListProps): React.ReactElement => {
@@ -22,6 +23,14 @@ export const CharacterList = (props: ListProps): React.ReactElement => {
       <Datagrid rowClick="show">
         <DateField source="createdAt" label="Created At" />
         <TextField label="experience" source="experience" />
+        <ReferenceField
+          label="Field"
+          source="fieldmodel.id"
+          reference="FieldModel"
+        >
+          <TextField source={FIELDMODEL_TITLE_FIELD} />
+        </ReferenceField>
+        <TextField label="hp" source="hp" />
         <TextField label="ID" source="id" />
         <TextField label="level" source="level" />
         <TextField label="name" source="name" />

@@ -16,12 +16,14 @@ import {
   Min,
   Max,
   IsOptional,
+  ValidateNested,
   IsString,
   MaxLength,
-  ValidateNested,
 } from "class-validator";
-import { StatusCreateNestedManyWithoutCharactersInput } from "./StatusCreateNestedManyWithoutCharactersInput";
+import { FieldModelWhereUniqueInput } from "../../fieldModel/base/FieldModelWhereUniqueInput";
 import { Type } from "class-transformer";
+import { InventoryCreateNestedManyWithoutCharactersInput } from "./InventoryCreateNestedManyWithoutCharactersInput";
+import { StatusCreateNestedManyWithoutCharactersInput } from "./StatusCreateNestedManyWithoutCharactersInput";
 import { UserWhereUniqueInput } from "../../user/base/UserWhereUniqueInput";
 
 @InputType()
@@ -38,6 +40,43 @@ class CharacterCreateInput {
     nullable: true,
   })
   experience?: number | null;
+
+  @ApiProperty({
+    required: false,
+    type: () => FieldModelWhereUniqueInput,
+  })
+  @ValidateNested()
+  @Type(() => FieldModelWhereUniqueInput)
+  @IsOptional()
+  @Field(() => FieldModelWhereUniqueInput, {
+    nullable: true,
+  })
+  fieldField?: FieldModelWhereUniqueInput | null;
+
+  @ApiProperty({
+    required: false,
+    type: Number,
+  })
+  @IsInt()
+  @Min(-999999999)
+  @Max(999999999)
+  @IsOptional()
+  @Field(() => Number, {
+    nullable: true,
+  })
+  hp?: number | null;
+
+  @ApiProperty({
+    required: false,
+    type: () => InventoryCreateNestedManyWithoutCharactersInput,
+  })
+  @ValidateNested()
+  @Type(() => InventoryCreateNestedManyWithoutCharactersInput)
+  @IsOptional()
+  @Field(() => InventoryCreateNestedManyWithoutCharactersInput, {
+    nullable: true,
+  })
+  inventories?: InventoryCreateNestedManyWithoutCharactersInput;
 
   @ApiProperty({
     required: false,

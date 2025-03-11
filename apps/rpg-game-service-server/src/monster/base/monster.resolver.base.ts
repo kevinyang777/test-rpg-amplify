@@ -13,6 +13,12 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { Monster } from "./Monster";
 import { MonsterCountArgs } from "./MonsterCountArgs";
 import { MonsterFindManyArgs } from "./MonsterFindManyArgs";
@@ -20,12 +26,23 @@ import { MonsterFindUniqueArgs } from "./MonsterFindUniqueArgs";
 import { CreateMonsterArgs } from "./CreateMonsterArgs";
 import { UpdateMonsterArgs } from "./UpdateMonsterArgs";
 import { DeleteMonsterArgs } from "./DeleteMonsterArgs";
+import { FieldModel } from "../../fieldModel/base/FieldModel";
 import { MonsterDto } from "../MonsterDto";
 import { MonsterService } from "../monster.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => Monster)
 export class MonsterResolverBase {
-  constructor(protected readonly service: MonsterService) {}
+  constructor(
+    protected readonly service: MonsterService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @graphql.Query(() => MetaQueryPayload)
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "read",
+    possession: "any",
+  })
   async _monstersMeta(
     @graphql.Args() args: MonsterCountArgs
   ): Promise<MetaQueryPayload> {
@@ -35,14 +52,26 @@ export class MonsterResolverBase {
     };
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => [Monster])
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "read",
+    possession: "any",
+  })
   async monsters(
     @graphql.Args() args: MonsterFindManyArgs
   ): Promise<Monster[]> {
     return this.service.monsters(args);
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => Monster, { nullable: true })
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "read",
+    possession: "own",
+  })
   async monster(
     @graphql.Args() args: MonsterFindUniqueArgs
   ): Promise<Monster | null> {
@@ -53,24 +82,52 @@ export class MonsterResolverBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Monster)
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "create",
+    possession: "any",
+  })
   async createMonster(
     @graphql.Args() args: CreateMonsterArgs
   ): Promise<Monster> {
     return await this.service.createMonster({
       ...args,
-      data: args.data,
+      data: {
+        ...args.data,
+
+        fieldField: args.data.fieldField
+          ? {
+              connect: args.data.fieldField,
+            }
+          : undefined,
+      },
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Monster)
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "update",
+    possession: "any",
+  })
   async updateMonster(
     @graphql.Args() args: UpdateMonsterArgs
   ): Promise<Monster | null> {
     try {
       return await this.service.updateMonster({
         ...args,
-        data: args.data,
+        data: {
+          ...args.data,
+
+          fieldField: args.data.fieldField
+            ? {
+                connect: args.data.fieldField,
+              }
+            : undefined,
+        },
       });
     } catch (error) {
       if (isRecordNotFoundError(error)) {
@@ -83,6 +140,11 @@ export class MonsterResolverBase {
   }
 
   @graphql.Mutation(() => Monster)
+  @nestAccessControl.UseRoles({
+    resource: "Monster",
+    action: "delete",
+    possession: "any",
+  })
   async deleteMonster(
     @graphql.Args() args: DeleteMonsterArgs
   ): Promise<Monster | null> {
@@ -96,6 +158,27 @@ export class MonsterResolverBase {
       }
       throw error;
     }
+  }
+
+  @common.UseInterceptors(AclFilterResponseInterceptor)
+  @graphql.ResolveField(() => FieldModel, {
+    nullable: true,
+    name: "fieldField",
+  })
+  @nestAccessControl.UseRoles({
+    resource: "FieldModel",
+    action: "read",
+    possession: "any",
+  })
+  async getFieldField(
+    @graphql.Parent() parent: Monster
+  ): Promise<FieldModel | null> {
+    const result = await this.service.getFieldField(parent.id);
+
+    if (!result) {
+      return null;
+    }
+    return result;
   }
 
   @graphql.Mutation(() => MonsterDto)
